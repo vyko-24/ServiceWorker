@@ -1,7 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const logList = document.getElementById('log-list');
     let isCurrentlyActive = false;
-    
+    let idleInterval = null; // We'll store the interval ID here
+
     const addLogEntry = (name, status) => {
         const date = new Date();
         const formattedDate = `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}:${date.getMilliseconds().toString().padStart(3, '0')}`;
@@ -11,6 +12,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const listItem = document.createElement('li');
         listItem.innerHTML = `${icon} <span class="event-name">${name}</span>: <span class="event-date">${formattedDate}</span>`;
         logList.appendChild(listItem);
+    };
+
+    const startIdleLogging = () => {
+        // Only start the interval if it's not already running
+        if (!idleInterval) {
+            addLogEntry('Ocioso', 'idle'); // Log the first idle message
+            idleInterval = setInterval(() => {
+                addLogEntry('Ocioso', 'idle'); // Log repeated idle messages
+            }, 3000);
+        }
+    };
+
+    const stopIdleLogging = () => {
+        if (idleInterval) {
+            clearInterval(idleInterval);
+            idleInterval = null;
+        }
     };
 
     if ('serviceWorker' in navigator) {
@@ -46,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (eventStatus === 'installed' || eventStatus === 'activating' || eventStatus === 'fetching') {
                         addLogEntry(eventName, eventStatus);
                         isCurrentlyActive = (navigator.serviceWorker.controller && navigator.serviceWorker.controller.state === 'activated');
+                        stopIdleLogging(); // Stop logging idle when an event is received
                     } else if (eventStatus === 'registered') {
                         addLogEntry(eventName, eventStatus);
                     }
@@ -56,20 +75,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (navigator.serviceWorker.controller && !isCurrentlyActive) {
                     addLogEntry('Activo', 'active');
                     isCurrentlyActive = true;
+                    stopIdleLogging(); // Stop logging idle when the controller changes
                 }
             });
             
             setInterval(() => {
                 const controller = navigator.serviceWorker.controller;
-                if (!controller) {
-                    addLogEntry('Ocioso', 'idle');
-                } else if (!isCurrentlyActive) {
+                if (!controller && isCurrentlyActive) {
+                    // Start the idle logging loop when the SW becomes inactive
+                    startIdleLogging();
+                    isCurrentlyActive = false; // Set to false to not re-start the logging
+                } else if (controller && !isCurrentlyActive) {
                     addLogEntry('Activo', 'active');
                     isCurrentlyActive = true;
+                    stopIdleLogging(); // Stop logging idle when active again
                 }
             }, 3000);
         });
     } else {
-        console.log('El navegador no soporta Service Workers.');
+        console.log('Ayudaaa');
     }
 });
