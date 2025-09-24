@@ -1,7 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const logList = document.getElementById('log-list');
     let isCurrentlyActive = false;
-    let isIdle = false; 
+    let isIdle = false;
+
     const addLogEntry = (name, status) => {
         const date = new Date();
         const formattedDate = `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}:${date.getMilliseconds().toString().padStart(3, '0')}`;
@@ -77,15 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
             setInterval(() => {
                 const controller = navigator.serviceWorker.controller;
                 if (!controller && isCurrentlyActive) {
-                    if (!isIdle) { 
-                        addLogEntry('Ocioso', 'idle');
-                        isIdle = true;
-                    }
+                    addLogEntry('Ocioso', 'idle');
                     isCurrentlyActive = false;
                 } else if (controller && !isCurrentlyActive) {
                     addLogEntry('Activo', 'active');
                     isCurrentlyActive = true;
-                    isIdle = false; 
                 }
             }, 3000);
         });
